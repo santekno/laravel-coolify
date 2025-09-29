@@ -1,33 +1,37 @@
 {
-    "listeners": {
-        "*:8000": {
-            "pass": "routes",
-            "forwarded": {
-                "protocol": "X-Forwarded-Proto",
-                "source": ["116.193.191.91"]
-            }
-        }
-    },
-
-    "routes": [
-        {
-            "match": {
-                "uri": "!/index.php"
-            },
-            "action": {
-                "share": "/var/www/html/public$uri",
-                "fallback": {
-                    "pass": "applications/laravel"
-                }
-            }
-        }
-    ],
-
-    "applications": {
-        "laravel": {
-            "type": "php",
-            "root": "/var/www/html/public/",
-            "script": "index.php"
-        }
+  "listeners": {
+    "*:8000": {
+      "pass": "routes"
     }
+  },
+  "routes": [
+    {
+      "match": {
+        "uri": ["/favicon.ico", "/robots.txt"]
+      },
+      "action": {
+        "share": "/var/www/html/public"
+      }
+    },
+    {
+      "match": {
+        "uri": "/assets/*"
+      },
+      "action": {
+        "share": "/var/www/html/public"
+      }
+    },
+    {
+      "action": {
+        "pass": "applications/laravel"
+      }
+    }
+  ],
+  "applications": {
+    "laravel": {
+      "type": "php",
+      "root": "/var/www/html/public",
+      "index": "index.php"
+    }
+  }
 }
