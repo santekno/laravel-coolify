@@ -1,37 +1,30 @@
 # ==========================
-# Stage 1: Build frontend assets
+# Stage 1: Composer dependencies
+# ==========================
+FROM composer:2 AS vendor
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-scripts --no-dev --prefer-dist --optimize-autoloader
+COPY . .
+RUN composer dump-autoload
+
+
+# ==========================
+# Stage 2: Node (Vite build)
 # ==========================
 FROM node:20 AS frontend
 
 WORKDIR /app
-
-# Copy file composer untuk install dependency PHP di stage Node
-COPY composer.json composer.lock ./
-
-# Install PHP dependencies pakai Composer (butuh PHP CLI)
-# Tambahkan php-cli & composer di image Node
-RUN apt-get update && apt-get install -y php-cli unzip curl git \
-    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-    && composer install --no-scripts --no-dev --prefer-dist --optimize-autoloader
-
-# Copy package.json & package-lock.json untuk npm cache
 COPY package*.json vite.config.* ./
-
-# Install dependencies JS
 RUN npm install
-
-# Copy semua source code (termasuk resources/ dan vendor/ hasil composer)
 COPY . .
-
-# Pastikan vendor sudah ada untuk Ziggy
-RUN composer dump-autoload
-
-# Build asset untuk production
+COPY --from=vendor /app/vendor ./vendor
 RUN npm run build
 
 
 # ==========================
-# Stage 2: PHP + Unit (final image)
+# Stage 3: PHP + Unit (final image)
 # ==========================
 FROM unit:1.34.1-php8.3
 
@@ -51,42 +44,33 @@ RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/custom.ini \
     && echo "upload_max_filesize=64M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "post_max_size=64M" >> /usr/local/etc/php/conf.d/custom.ini
 
-# Copy Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# Set workdir
 WORKDIR /var/www/html
 
-# Buat folder Laravel penting
 RUN mkdir -p storage bootstrap/cache
 
-# Copy semua source code
+# Copy source code
 COPY . .
 
-# Copy vendor dari stage frontend (supaya ziggy dll sudah ada)
-COPY --from=frontend /app/vendor ./vendor
-
-# Copy hasil build frontend dari stage Node
+# Copy vendor & build asset
+COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
-# Permission Laravel folders
-RUN chown -R unit:unit storage bootstrap/cache public/build vendor \
-    && chmod -R 775 storage bootstrap/cache public/build vendor
+# Permission
+RUN chown -R unit:unit storage bootstrap/cache vendor public/build \
+    && chmod -R 775 storage bootstrap/cache vendor public/build
 
-# Install dependency Laravel (pastikan tidak overwrite vendor Ziggy)
-RUN composer install --prefer-dist --optimize-autoloader --no-interaction --no-dev
-
-# Laravel cache optimization
-RUN php artisan config:clear \
+# Optimize Laravel
+RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction \
+    && php artisan config:clear \
     && php artisan route:clear \
     && php artisan view:clear \
     && php artisan config:cache \
     && php artisan route:cache \
     && php artisan view:cache
 
-# Copy Unit config
 COPY unit.json /docker-entrypoint.d/unit.json
 
 EXPOSE 8000
-
 CMD ["unitd", "--no-daemon"]
