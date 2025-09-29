@@ -22,6 +22,14 @@
       }
     },
     {
+      "match": {
+        "uri": "/build/*"
+      },
+      "action": {
+        "share": "/var/www/html/public"
+      }
+    },
+    {
       "action": {
         "pass": "applications/laravel"
       }
