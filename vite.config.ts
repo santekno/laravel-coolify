@@ -1,37 +1,23 @@
-import vue from '@vitejs/plugin-vue';
-import autoprefixer from 'autoprefixer';
+import { wayfinder } from '@laravel/vite-plugin-wayfinder';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
-import path from 'path';
-import tailwindcss from 'tailwindcss';
-import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-    base: '/build/', // pastikan semua asset pakai prefix ini
     plugins: [
         laravel({
-            input: ['resources/js/app.ts'],
-            ssr: 'resources/js/ssr.ts',
+            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
-        vue({
-            template: {
-                transformAssetUrls: {
-                    base: null,
-                    includeAbsolute: false,
-                },
-            },
+        react(),
+        tailwindcss(),
+        wayfinder({
+            formVariants: true,
         }),
     ],
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './resources/js'),
-            'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy/dist/index.es.js'), // arahkan ke file JS langsung
-        },
-    },
-    css: {
-        postcss: {
-            plugins: [tailwindcss, autoprefixer],
-        },
+    esbuild: {
+        jsx: 'automatic',
     },
 });
