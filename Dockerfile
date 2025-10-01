@@ -15,11 +15,20 @@ RUN composer dump-autoload
 # ==========================
 FROM node:20 AS frontend
 
+# Install PHP for wayfinder plugin
+RUN apt-get update && apt-get install -y \
+    php8.2-cli php8.2-common php8.2-curl php8.2-zip php8.2-mbstring php8.2-xml \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY package*.json vite.config.* ./
 RUN npm install
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
+
+# Set up Laravel environment for wayfinder
+RUN cp .env.example .env || echo "APP_KEY=" > .env
+
 RUN npm run build
 
 
