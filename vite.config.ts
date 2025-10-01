@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+    base: '/build/', // pastikan semua asset pakai prefix ini
     plugins: [
         laravel({
             input: ['resources/js/app.ts'],
@@ -25,7 +26,7 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './resources/js'),
-            'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
+            'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy/dist/index.es.js'), // arahkan ke file JS langsung
         },
     },
     css: {

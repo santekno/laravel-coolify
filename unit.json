@@ -15,18 +15,10 @@
     },
     {
       "match": {
-        "uri": "/assets/*"
-      },
-      "action": {
-        "share": "/var/www/html/public"
-      }
-    },
-    {
-      "match": {
         "uri": "/build/*"
       },
       "action": {
-        "share": "/var/www/html/public"
+        "share": "/var/www/html/public/build"
       }
     },
     {
